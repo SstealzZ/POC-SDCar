@@ -1,14 +1,33 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+/// <summary>
+/// Manages the spawning of enemy vehicles in the simulation environment.
+/// Handles timing, positioning, and randomization of obstacles.
+/// </summary>
 public class SpawnManager : MonoBehaviour
 {
+    /// <summary>
+    /// Prefab of the enemy car to spawn
+    /// </summary>
     public GameObject Car_enemy;
+    
+    /// <summary>
+    /// Time interval between spawn waves in seconds
+    /// </summary>
     public float spawnInterval = 4f;
+    
     private float timer = 0f;
 
+    /// <summary>
+    /// X positions of available lanes for spawning
+    /// </summary>
     float[] lanesX = new float[] { -1.5f, -0.5f, 0.5f };
 
+    /// <summary>
+    /// Updates the spawn timing and creates new enemy vehicles according to the defined interval.
+    /// Randomly selects lanes and ensures no lane receives multiple cars in a single spawn cycle.
+    /// </summary>
     void Update()
     {
         timer += Time.deltaTime;
