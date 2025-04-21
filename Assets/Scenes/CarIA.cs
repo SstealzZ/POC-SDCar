@@ -1,13 +1,17 @@
 using UnityEngine;
 
+/// <summary>
+/// Self-driving car AI that manages obstacle detection, lane changing behavior,
+/// and adaptive speed control based on environmental conditions.
+/// </summary>
 public class CarIA : MonoBehaviour
 {
-    [Header("Détection")]
+    [Header("Detection")]
     public float detectionDistance = 8f;
     public float distanceChangementVoie = 5f;
     public LayerMask enemyLayer;
 
-    [Header("Vitesse")]
+    [Header("Speed")]
     public float vitesseMax = 5f;
     public float vitesseMin = 1f;
     public float vitesseActuelle = 2f;
@@ -22,6 +26,9 @@ public class CarIA : MonoBehaviour
     public float laneChangeSpeed = 5f;
     private bool isChangingLane = false;
 
+    /// <summary>
+    /// Initializes the car position to the default lane on component awakening.
+    /// </summary>
     void Awake()
     {
         Vector3 pos = transform.position;
@@ -29,12 +36,15 @@ public class CarIA : MonoBehaviour
         transform.position = pos;
     }
 
+    /// <summary>
+    /// Updates the car's behavior each frame, handling obstacle detection,
+    /// lane changing decisions, and speed adjustments.
+    /// </summary>
     void Update()
     {
         changementVoieTimer -= Time.deltaTime;
         float targetSpeed = vitesseMax;
 
-        // 🔍 Détection d'obstacle sur la voie actuelle
         Vector2 origin = transform.position;
         RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.up, detectionDistance, enemyLayer);
 
@@ -43,10 +53,8 @@ public class CarIA : MonoBehaviour
             float distance = hit.distance;
             targetSpeed = Mathf.Lerp(vitesseMin, vitesseMax, distance / detectionDistance);
 
-            // Changement de voie uniquement si on est assez proche et après le délai minimum
             if (distance < distanceChangementVoie && !isChangingLane && changementVoieTimer <= 0)
             {
-                // Analyse de toutes les voies pour trouver la meilleure option
                 int bestLane = FindBestLane();
                 if (bestLane != currentLane)
                 {
@@ -62,28 +70,29 @@ public class CarIA : MonoBehaviour
             isChangingLane = false;
         }
 
-        // Transition de vitesse
         vitesseActuelle = Mathf.Lerp(vitesseActuelle, targetSpeed, Time.deltaTime * ralentissementForce);
 
-        // Mouvement fluide vers voie cible
         Vector3 currentPos = transform.position;
         float targetX = lanesX[targetLane];
         currentPos.x = Mathf.Lerp(currentPos.x, targetX, Time.deltaTime * laneChangeSpeed);
         transform.position = currentPos;
 
-        // Reset du changement de voie si on est arrivé à destination
         if (Mathf.Abs(currentPos.x - targetX) < 0.01f)
         {
             isChangingLane = false;
         }
     }
 
+    /// <summary>
+    /// Determines the optimal lane for the car based on obstacle detection and safety analysis.
+    /// 
+    /// <returns>The index of the best lane to move to</returns>
+    /// </summary>
     int FindBestLane()
     {
         float[] distances = new float[lanesX.Length];
         bool[] laneBlocked = new bool[lanesX.Length];
 
-        // Vérifier chaque voie
         for (int i = 0; i < lanesX.Length; i++)
         {
             Vector3 checkPos = new Vector3(lanesX[i], transform.position.y, transform.position.z);
@@ -101,7 +110,6 @@ public class CarIA : MonoBehaviour
             }
         }
 
-        // Trouver la meilleure voie
         int bestLane = currentLane;
         float bestScore = -1f;
 
@@ -109,10 +117,8 @@ public class CarIA : MonoBehaviour
         {
             if (!laneBlocked[i])
             {
-                // Favoriser les voies libres
                 float score = detectionDistance;
                 
-                // Pénaliser les changements de voie trop grands
                 score -= Mathf.Abs(i - currentLane) * 2;
                 
                 if (score > bestScore)
@@ -123,7 +129,6 @@ public class CarIA : MonoBehaviour
             }
             else if (distances[i] > distances[currentLane])
             {
-                // Si toutes les voies sont bloquées, choisir celle avec l'obstacle le plus loin
                 float score = distances[i] - Mathf.Abs(i - currentLane) * 2;
                 if (score > bestScore)
                 {
